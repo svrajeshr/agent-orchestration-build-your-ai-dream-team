@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A quick overview of project ownership, status, recent activity, and priority.">
+    <title>Project Pulse</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="dashboard">
+      <header class="dashboard-header">
+        <div class="dashboard-heading">
+          <p class="dashboard-eyebrow">Team overview</p>
+          <h1 class="dashboard-title">Project Pulse</h1>
+          <p class="dashboard-subtitle">
+            See what the team is working on, who owns each effort, and where attention is needed.
+          </p>
+        </div>
+      </header>
+
+      <p class="dashboard-summary" id="project-status" role="status" aria-live="polite" aria-atomic="true">
+        Loading projects…
+      </p>
+      <section class="project-grid" id="project-grid" aria-label="Projects"></section>
+    </main>
+
+    <script>
+      const projectGrid = document.querySelector("#project-grid");
+      const projectStatus = document.querySelector("#project-status");
+
+      function createElement(tagName, className, text) {
+        const element = document.createElement(tagName);
+        if (className) {
+          element.className = className;
+        }
+        if (text !== undefined) {
+          element.textContent = text;
+        }
+        return element;
+      }
+
+      function getText(value, fallback) {
+        return typeof value === "string" && value.trim() ? value.trim() : fallback;
+      }
+
+      function normalizeToken(value) {
+        return value
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+      }
+
+      function normalizeStatus(value) {
+        const token = normalizeToken(value);
+        const statusAliases = {
+          "in-progress": "active",
+          "on-track": "on-track",
+          "at-risk": "at-risk",
+          done: "completed",
+          complete: "completed"
+        };
+        return statusAliases[token] || token || "unknown";
+      }
+
+      function normalizePriority(value) {
+        const token = normalizeToken(value);
+        const priorityAliases = {
+          urgent: "critical",
+          normal: "medium"
+        };
+        return priorityAliases[token] || token || "unknown";
+      }
+
+      function addDetail(details, label, value, badgeClass, dataAttribute, normalizedValue) {
+        const item = createElement("div");
+        const term = createElement("dt", "", label);
+        const description = createElement("dd");
+        if (badgeClass) {
+          const badge = createElement("span", badgeClass, value);
+          badge.setAttribute(dataAttribute, normalizedValue);
+          description.append(badge);
+        } else {
+          description.textContent = value;
+        }
+        item.append(term, description);
+        details.append(item);
+      }
+
+      function createProjectCard(project) {
+        const card = createElement("article", "project-card");
+        const header = createElement("header", "project-card-header");
+        const heading = createElement("h2", "project-card-title", getText(project.name, "Untitled project"));
+        const owner = createElement("p", "project-card-owner", `Owner: ${getText(project.owner, "Owner not listed")}`);
+        header.append(heading, owner);
+
+        const summary = createElement(
+          "p",
+          "project-card-summary",
+          getText(project.summary, "No summary is available for this project yet.")
+        );
+
+        const details = createElement("dl", "project-card-details");
+        const status = getText(project.status, "Status not specified");
+        addDetail(details, "Status", status, "status-badge", "data-status", normalizeStatus(status));
+        addDetail(
+          details,
+          "Recent activity",
+          getText(project.recentActivity, "No recent activity provided.")
+        );
+
+        const footer = createElement("footer", "project-card-footer");
+        const priority = getText(project.priority, "Priority not specified");
+        const priorityBadge = createElement("span", "priority-badge", priority);
+        priorityBadge.setAttribute("data-priority", normalizePriority(priority));
+        footer.append(priorityBadge);
+
+        card.append(header, summary, details, footer);
+        return card;
+      }
+
+      function clearProjectGrid() {
+        while (projectGrid.firstChild) {
+          projectGrid.removeChild(projectGrid.firstChild);
+        }
+      }
+
+      function showStatus(message, heading, stateClass) {
+        projectStatus.className = stateClass || "";
+        projectStatus.replaceChildren();
+        if (heading) {
+          projectStatus.classList.add("message-state");
+          projectStatus.append(
+            createElement("h2", "", heading),
+            createElement("p", "", message)
+          );
+        } else {
+          projectStatus.textContent = message;
+        }
+      }
+
+      async function loadProjects() {
+        try {
+          const response = await fetch("project-data.json");
+          if (!response.ok) {
+            throw new Error(`Project data request failed (${response.status}).`);
+          }
+
+          const data = await response.json();
+          if (!data || !Array.isArray(data.projects)) {
+            throw new Error("Project data must contain a top-level projects array.");
+          }
+
+          clearProjectGrid();
+          if (data.projects.length === 0) {
+            showStatus(
+              "There are no projects to display yet. Check back when a project has been added.",
+              "No projects yet",
+              "empty-state"
+            );
+            return;
+          }
+
+          const cards = document.createDocumentFragment();
+          data.projects.forEach((project) => {
+            const safeProject = project && typeof project === "object" ? project : {};
+            cards.append(createProjectCard(safeProject));
+          });
+          projectGrid.append(cards);
+          showStatus(`Showing ${data.projects.length} projects.`);
+        } catch (error) {
+          clearProjectGrid();
+          showStatus(
+            "Project information could not be loaded. Please try again later.",
+            "Unable to load projects",
+            "message-state"
+          );
+          console.error("Unable to load Project Pulse data:", error);
+        }
+      }
+
+      loadProjects();
+    </script>
+  </body>
+</html>

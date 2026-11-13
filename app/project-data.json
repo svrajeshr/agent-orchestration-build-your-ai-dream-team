@@ -1,0 +1,36 @@
+{
+  "projects": [
+    {
+      "name": "Example: Contributor Portal",
+      "owner": "Alex Morgan",
+      "status": "In progress",
+      "recentActivity": "Example update: completed the onboarding flow review.",
+      "priority": "High",
+      "summary": "A sample project to make contributor onboarding easier."
+    },
+    {
+      "name": "Example: Search Improvements",
+      "owner": "Sam Rivera",
+      "status": "Planning",
+      "recentActivity": "Example update: gathered feedback on common search tasks.",
+      "priority": "Medium",
+      "summary": "A sample effort to help the team find project information faster."
+    },
+    {
+      "name": "Example: Accessibility Review",
+      "owner": "Jordan Lee",
+      "status": "In progress",
+      "recentActivity": "Example update: started keyboard navigation checks.",
+      "priority": "High",
+      "summary": "A sample review focused on improving access for all contributors."
+    },
+    {
+      "name": "Example: Documentation Refresh",
+      "owner": "Taylor Chen",
+      "status": "On track",
+      "recentActivity": "Example update: refreshed the first set of setup guides.",
+      "priority": "Low",
+      "summary": "A sample project to keep contributor guides clear and current."
+    }
+  ]
+}
